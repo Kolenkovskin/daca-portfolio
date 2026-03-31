@@ -1,0 +1,13 @@
+# Credentials
+supabase-credentials.txt
+*.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
