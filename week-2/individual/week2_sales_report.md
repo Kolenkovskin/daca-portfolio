@@ -1,139 +1,139 @@
-# Отчёт очистки данных — Неделя 2
+# Andmete puhastamise raport — Nädal 2
 
-**Домен:** продажи (`sales`) с проверкой связанных таблиц `customers` и `products`
-**База:** UrbanStyle, PostgreSQL (Supabase)
-**Заказчик:** Toomas Kask (IT Director) — подготовка чистых цифр к заседанию правления
-
----
-
-## 1. Бизнес-проблема
-
-Kristi Tamm (CEO) требует цифры выручки, которым можно доверять. Toomas обнаружил задвоенные заказы и попросил оценить масштаб по всем доменам.
-
-Проверка показала, что отчётность содержит **два независимых дефекта, которые маскировали друг друга**: один завышал выручку, другой занижал. Из-за встречного направления ошибок итоговые цифры выглядели правдоподобно и не вызывали подозрений.
+**Domeen:** müügiandmed (`sales`), kontrolliga seotud tabelites `customers` ja `products`
+**Andmebaas:** UrbanStyle, PostgreSQL (Supabase)
+**Tellija:** Toomas Kask (IT Director) — puhaste numbrite ettevalmistus juhatuse koosolekuks
 
 ---
 
-## 2. Подход
+## 1. Äriprobleem
 
-Работа велась по правилу Toomas: **тестовая копия → чистка → проверка → документирование**. Продакшн-таблицы не изменялись.
+Kristi Tamm (CEO) nõuab käibenumbreid, mida saab usaldada. Toomas avastas dubleeritud tellimused ja palus hinnata probleemi ulatust kõigis domeenides.
 
-| Этап | Метод |
+Kontroll näitas, et aruandluses on **kaks sõltumatut viga, mis varjasid teineteist**: üks kergitas käivet, teine alandas. Kuna vead mõjusid vastassuundades, nägid lõppnumbrid usutavad välja ega tekitanud kahtlust.
+
+---
+
+## 2. Lähenemine
+
+Töö käis Toomase reegli järgi: **testkoopia → puhastamine → kontroll → dokumenteerimine**. Tootmistabeleid ei muudetud.
+
+| Etapp | Meetod |
 |---|---|
-| Диагностика дублей | `GROUP BY` + `HAVING count(*) > 1`, `count(*) − count(DISTINCT …)` |
-| Отбор дублей | `ROW_NUMBER() OVER (PARTITION BY … ORDER BY …)` + подзапрос, фильтр `rn > 1` |
-| Диагностика пропусков | `count(*)` против `count(столбец)`, `NULLIF(TRIM(…), '')` |
-| Нормализация текста | `TRIM`, `INITCAP`, контроль через `LENGTH` |
-| Приведение дат | `CASE` + `TO_DATE` для формата `DD/MM/YYYY`, `CAST` для ISO |
-| Отчётность по периодам | `TO_CHAR(…, 'YYYY-MM')` + `GROUP BY` |
+| Duplikaatide diagnostika | `GROUP BY` + `HAVING count(*) > 1`, `count(*) − count(DISTINCT …)` |
+| Duplikaatide eraldamine | `ROW_NUMBER() OVER (PARTITION BY … ORDER BY …)` + alampäring, filter `rn > 1` |
+| Puuduvate väärtuste diagnostika | `count(*)` vs `count(veerg)`, `NULLIF(TRIM(…), '')` |
+| Teksti normaliseerimine | `TRIM`, `INITCAP`, kontroll `LENGTH` abil |
+| Kuupäevade teisendamine | `CASE` + `TO_DATE` formaadile `DD/MM/YYYY`, `CAST` ISO-formaadile |
+| Perioodiaruandlus | `TO_CHAR(…, 'YYYY-MM')` + `GROUP BY` |
 
 ---
 
-## 3. Результаты «до / после»
+## 3. Tulemused «enne / pärast»
 
-### 3.1 Таблица `sales`
+### 3.1 Tabel `sales`
 
-| Показатель | До очистки | После очистки |
+| Näitaja | Enne puhastamist | Pärast puhastamist |
 |---|---|---|
-| Строк | 15 234 | 10 118 |
-| Уникальных `sale_id` | 10 118 | 10 118 |
-| Дубликатов | 5 116 (33,58%) | 0 |
-| `sale_id` с повторами | 4 013 | 0 |
-| Дат в формате `DD/MM/YYYY` | 457 (не читались) | 457 (приведены к `date`) |
-| Продаж без `customer_id` | 1 487 (9,8%) | 1 487 (помечены, не удалены) |
+| Ridu | 15 234 | 10 118 |
+| Unikaalseid `sale_id` | 10 118 | 10 118 |
+| Duplikaate | 5 116 (33,58%) | 0 |
+| Korduvaid `sale_id` | 4 013 | 0 |
+| Kuupäevi formaadis `DD/MM/YYYY` | 457 (ei loetud) | 457 (teisendatud tüüpi `date`) |
+| Müüke ilma `customer_id`-ta | 1 487 (9,8%) | 1 487 (märgistatud, mitte kustutatud) |
 
-Кратность дублей: 3 091 записи задвоены дважды, 759 — трижды, 147 — четырежды, 14 — пять раз, 2 — шесть раз.
+Duplikaatide kordsus: 3 091 kirjet on dubleeritud kaks korda, 759 — kolm korda, 147 — neli korda, 14 — viis korda, 2 — kuus korda.
 
-### 3.2 Выручка — ключевой результат
+### 3.2 Käive — võtmetulemus
 
-| Сценарий отчёта | Строк | Выручка |
+| Aruande stsenaarium | Ridu | Käive |
 |---|---|---|
-| Наивный отчёт (только ISO-даты, дубли на месте) | 14 777 | 4 230 939,69 € |
-| Даты приведены, дубли на месте | 15 234 | 4 374 231,27 € |
-| **Даты приведены + дедупликация** | **10 118** | **2 909 177,98 €** |
+| Naiivne aruanne (ainult ISO-kuupäevad, duplikaadid alles) | 14 777 | 4 230 939,69 € |
+| Kuupäevad teisendatud, duplikaadid alles | 15 234 | 4 374 231,27 € |
+| **Kuupäevad teisendatud + dedupliketsioon** | **10 118** | **2 909 177,98 €** |
 
-**Наивный отчёт завышал выручку на 45,4%.**
+**Naiivne aruanne kergitas käivet 45,4% võrra.**
 
-### 3.3 Таблица `customers`
+### 3.3 Tabel `customers`
 
-| Показатель | До очистки | После очистки |
+| Näitaja | Enne puhastamist | Pärast puhastamist |
 |---|---|---|
-| Строк | 3 150 | 3 150 |
-| Написаний городов | 54 | 12 |
-| Лишних вариантов написания | 42 | 0 |
-| Клиентов без email | 380 (12,1%) | 380 (помечены) |
-| Клиентов без `loyalty_tier` | 1 260 (40,0%) | 1 260 (помечены) |
-| Строк с задвоенным email | 130 (128 адресов) | выявлены |
-| Дубликатов `customer_id` | 0 | 0 |
+| Ridu | 3 150 | 3 150 |
+| Linnanimede kirjapilte | 54 | 12 |
+| Üleliigseid kirjapildivariante | 42 | 0 |
+| Kliente ilma e-mailita | 380 (12,1%) | 380 (märgistatud) |
+| Kliente ilma `loyalty_tier`-ita | 1 260 (40,0%) | 1 260 (märgistatud) |
+| Ridu dubleeritud e-mailiga | 130 (128 aadressi) | tuvastatud |
+| `customer_id` duplikaate | 0 | 0 |
 
-### 3.4 Таблица `products`
+### 3.4 Tabel `products`
 
-| Показатель | Значение |
+| Näitaja | Väärtus |
 |---|---|
-| Строк | 362 |
-| Дубликатов `product_id` | 0 |
-| Расхождений цены с `retail_price × quantity` (более 1 €) | 664 строки |
+| Ridu | 362 |
+| `product_id` duplikaate | 0 |
+| Hinna lahknevusi valemist `retail_price × quantity` (üle 1 €) | 664 rida |
 
 ---
 
-## 4. Выводы для бизнеса
+## 4. Ärijäreldused
 
-**1. Отчётность завышала выручку на 45,4% — 4 230 939,69 € вместо 2 909 177,98 €.**
-Причина не одна, а две, и они действовали навстречу друг другу:
-- дубликаты добавляли **1 465 053,29 €** несуществующих продаж;
-- сбой формата даты одновременно скрывал **143 291,58 €** реальных продаж.
+**1. Aruandlus kergitas käivet 45,4% võrra — 4 230 939,69 € tegeliku 2 909 177,98 € asemel.**
+Põhjuseid ei ole üks, vaid kaks, ja need mõjusid vastassuundades:
+- duplikaadid lisasid **1 465 053,29 €** olematuid müüke;
+- kuupäevaformaadi viga varjas samal ajal **143 291,58 €** tegelikke müüke.
 
-Именно взаимная компенсация ошибок делала цифры внешне достоверными. Проверка только на дубликаты или только на форматы дат выявила бы половину проблемы и дала бы новое, столь же неверное число.
+Just vigade vastastikune kompenseerumine muutis numbrid väliselt usaldusväärseks. Kontroll ainult duplikaatide või ainult kuupäevaformaatide osas oleks avastanud poole probleemist ja andnud uue, sama ekslikku numbri.
 
-**2. Причина дублей — двойной импорт.**
-Касса (POS) и сайт (e-commerce) загружали одни и те же операции повторно. Поскольку `sale_date` хранится текстом в двух форматах (`2023-01-16` и `16/01/2023`), совпадающие записи не распознавались системой как один и тот же день. Один дефект вскрылся через другой.
+**2. Duplikaatide põhjus on topeltimport.**
+Kassasüsteem (POS) ja veebipood (e-commerce) laadisid samu tehinguid korduvalt. Kuna `sale_date` on salvestatud tekstina kahes formaadis (`2023-01-16` ja `16/01/2023`), ei tuvastanud süsteem kattuvaid kirjeid sama päevana. Üks viga tuli välja teise kaudu.
 
-**3. Сбой формата даты затрагивает весь период, а не отдельный сбойный импорт.**
-Слэш-даты распределены с 04.01.2023 по 09.06.2026: 193 записи в 2023 году, 237 в 2024, 26 в 2025, 1 в 2026. Проблема была массовой и постепенно сошла на нет — вероятно, после смены системы ввода. Вывод для практики: **все исторические отчёты по датам за 2023–2024 годы требуют пересчёта.**
+**3. Kuupäevaformaadi viga puudutab kogu perioodi, mitte üksikut ebaõnnestunud importi.**
+Kaldkriipsuga kuupäevad jagunevad ajavahemikus 04.01.2023 kuni 09.06.2026: 193 kirjet aastal 2023, 237 aastal 2024, 26 aastal 2025, 1 aastal 2026. Probleem oli massiline ja hääbus järk-järgult — tõenäoliselt pärast sisestussüsteemi vahetust. Praktiline järeldus: **kõik 2023.–2024. aasta kuupäevapõhised ajaloolised aruanded vajavad ümberarvutamist.**
 
-**4. Отчёты в разрезе городов недостоверны.**
-54 варианта написания вместо 12 реальных городов означают, что любая группировка по городу разбивала один город на несколько строк. Все региональные показатели до нормализации занижены.
+**4. Linnade lõikes koostatud aruanded ei ole usaldusväärsed.**
+54 kirjapildivarianti 12 tegeliku linna asemel tähendab, et iga linna järgi rühmitamine jagas ühe linna mitmeks reaks. Kõik regionaalsed näitajad olid enne normaliseerimist alahinnatud.
 
-**5. 40% клиентской базы не имеет уровня лояльности.**
-1 260 клиентов из 3 150 — это не пропуск в данных, а неработающий бизнес-процесс: программа лояльности не присваивает уровень при регистрации. Проблема на стороне источника, SQL-очисткой не решается.
+**5. 40% kliendibaasist on ilma lojaalsustasemeta.**
+1 260 klienti 3 150-st ei ole andmelünk, vaid mittetoimiv äriprotsess: lojaalsusprogramm ei omista registreerimisel taset. Probleem on allika poolel ja SQL-puhastusega ei lahene.
 
 ---
 
-## 5. Рекомендации
+## 5. Soovitused
 
-| Приоритет | Действие |
+| Prioriteet | Tegevus |
 |---|---|
-| Высокий | Пересчитать отчёты выручки за 2023–2026 с учётом обоих дефектов |
-| Высокий | Устранить двойной импорт POS и e-commerce на уровне загрузки данных |
-| Высокий | Перевести `sale_date` из типа `text` в тип `date` на уровне схемы |
-| Средний | Ввести нормализацию города (`TRIM` + `INITCAP`) при вводе данных |
-| Средний | Проверить 664 расхождения цены — возможны скидки, не отражённые в схеме |
-| Средний | Выяснить причину 130 задвоенных email — вероятны дубли аккаунтов |
-| Низкий | Разобраться с 1 487 продажами без `customer_id` — гостевые покупки или потеря связи |
+| Kõrge | Arvutada ümber 2023.–2026. aasta käibearuanded, arvestades mõlemat viga |
+| Kõrge | Kõrvaldada POS-i ja e-poe topeltimport andmelaadimise tasemel |
+| Kõrge | Muuta `sale_date` tüübist `text` tüübiks `date` skeemi tasemel |
+| Keskmine | Rakendada linnanime normaliseerimine (`TRIM` + `INITCAP`) juba sisestamisel |
+| Keskmine | Kontrollida 664 hinna lahknevust — võimalikud on skeemis kajastamata allahindlused |
+| Keskmine | Selgitada välja 130 dubleeritud e-maili põhjus — tõenäolised kontode duplikaadid |
+| Madal | Uurida 1 487 müüki ilma `customer_id`-ta — külaliskliendid või kadunud seos |
 
 ---
 
-## 6. Чему научился
+## 6. Õpitu ja väljakutsed
 
-Главный урок недели оказался не техническим. Изначальный отчёт содержал ошибку: числа «до» и «после» были взяты из разных сценариев расчёта, и итог выглядел абсурдно — выручка росла после удаления трети строк. Ошибка вскрылась не при проверке кода, а от вопроса «почему это число не сходится с логикой».
+Nädala peamine õppetund ei olnud tehniline. Esialgne raport sisaldas viga: numbrid «enne» ja «pärast» olid võetud erinevatest arvutusstsenaariumitest ning tulemus nägi absurdne välja — käive kasvas pärast kolmandiku ridade eemaldamist. Viga ei tulnud välja koodi kontrollimisel, vaid küsimusest «miks see number ei klapi loogikaga».
 
-Отсюда правило: **результат запроса необходимо сверять со здравым смыслом, а не только с синтаксисом.** Технически безупречный запрос способен дать бессмысленный ответ, и обнаружить это может лишь тот, кто понимает, что означают числа.
+Sellest reegel: **päringu tulemust tuleb kõrvutada terve mõistusega, mitte ainult süntaksiga.** Tehniliselt laitmatu päring võib anda mõttetu vastuse, ja seda suudab märgata üksnes see, kes mõistab, mida numbrid tähendavad.
 
-Второй урок — про накладывающиеся дефекты. Две ошибки в противоположных направлениях выглядят достовернее одной, потому что взаимно компенсируются. Поэтому очистку следует доводить до конца по всем найденным дефектам, а не останавливаться на первом.
+Teine õppetund puudutab kattuvaid vigu. Kaks viga vastassuundades näivad usaldusväärsemad kui üks, sest need kompenseerivad teineteist. Seetõttu tuleb puhastamine viia lõpuni kõigi leitud vigade osas, mitte peatuda esimese juures.
 
-Третий урок — технический: `NULL` не равен пустой строке, `count(*)` не равен `count(столбец)`, а `PARTITION BY` определяет само понятие дубликата. Смена столбца в `PARTITION BY` меняет смысл всего запроса.
-
----
-
-## 7. Использование AI
-
-Claude использовался как преподаватель и рецензент: объяснение конструкций SQL, разбор сообщений об ошибках, проверка числовых расчётов и вычитка настоящего отчёта. Все запросы написаны самостоятельно; ошибка в сопоставлении сценариев расчёта выявлена в ходе собственной проверки результата.
+Kolmas õppetund on tehniline: `NULL` ei võrdu tühja stringiga, `count(*)` ei võrdu `count(veerg)`-iga, ja `PARTITION BY` määrab duplikaadi mõiste enda. Veeru vahetamine `PARTITION BY` sees muudab kogu päringu tähendust.
 
 ---
 
-## 8. Артефакты
+## 7. AI kasutamine
 
-- [`week2_deduplication.sql`](week2_deduplication.sql) — диагностика и удаление дублей
-- [`week2_null_audit.sql`](week2_null_audit.sql) — аудит пропусков и замаскированной пустоты
+Claude'i kasutasin õpetaja ja retsensendina: SQL-konstruktsioonide selgitamine, veateadete analüüs, arvutuste kontroll ja käesoleva raporti keeleline ülevaatus. Kõik päringud on kirjutatud iseseisvalt; arvutusstsenaariumite segiajamise viga tuli välja tulemuse omapoolsel kontrollimisel.
 
-**Инструменты:** PostgreSQL (Supabase), `GROUP BY`/`HAVING`, `ROW_NUMBER() OVER`, подзапросы, `COALESCE`/`NULLIF`, `TRIM`/`INITCAP`/`LENGTH`, `CASE`, `TO_DATE`/`TO_CHAR`, `CAST`, `UNION ALL`.
+---
+
+## 8. Artefaktid
+
+- [`week2_deduplication.sql`](week2_deduplication.sql) — duplikaatide diagnostika ja eemaldamine
+- [`week2_null_audit.sql`](week2_null_audit.sql) — puuduvate ja maskeeritud tühjade väärtuste audit
+
+**Tööriistad:** PostgreSQL (Supabase), `GROUP BY`/`HAVING`, `ROW_NUMBER() OVER`, alampäringud, `COALESCE`/`NULLIF`, `TRIM`/`INITCAP`/`LENGTH`, `CASE`, `TO_DATE`/`TO_CHAR`, `CAST`, `UNION ALL`.
