@@ -43,6 +43,8 @@ Rollide C ja rollide varasem leid (12 toodet ilma müügita) said täna teise se
 | [`individual/week3_roll_b_kadunud_kliendid.sql`](individual/week3_roll_b_kadunud_kliendid.sql) | Antiliitmine (anti-JOIN), kadumismäär linnade kaupa, dünaamika registreerimiskuu järgi |
 | [`individual/week3_roll_c_tooted_inventuur.sql`](individual/week3_roll_c_tooted_inventuur.sql) | Müümata tooted, TOP-10 müüdumad, kategooriate võrdlus, 3 tabeli JOIN inventuuriga |
 | [`individual/week3_roll_d_muugikanalid.sql`](individual/week3_roll_d_muugikanalid.sql) | Kanalite ülevaade, kanal × linn, kanal × kategooria (3 tabelit), käive kliendi kohta |
+| [`individual/week3_esitlus.pptx`](individual/week3_esitlus.pptx) | **Esitlus** — Kontekst → Tulemused → Suurim üllatus → Soovitus → Puuduvad andmed |
+| [`individual/week3_esitlus.pdf`](individual/week3_esitlus.pdf) | Esitlus (vaadatav brauseris) |
 
 ---
 
