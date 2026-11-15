@@ -4,7 +4,7 @@
 
 **Andmete alus:** kõik summad on arvutatud vaatest `sales_v_puhas` — 10 688 rida, 3 018 967,36 € (topeltread eemaldatud, kaks kuupäevaformaati ühtlustatud). Periood 2023-01 … 2025-02.
 
-**Staatus:** neli rolli (A–D) läbitud, kõik numbrid kontrollitud Supabase'is.
+**Staatus:** neli rolli (A–D) läbitud, kõik numbrid kontrollitud Supabase'is. Esitlus: [`week4_esitlus.pdf`](individual/week4_esitlus.pdf).
 
 ---
 
@@ -47,6 +47,8 @@ Topeltread muudavad summasid, aga peaaegu mitte kasvuprotsenti: käive 4,37 → 
 | [`individual/week4_ladu_aggregation.sql`](individual/week4_ladu_aggregation.sql) | Roll C: Tartu žurnaal liikumistüüpide kaupa, žurnaal vs kassa (kaks CTE-d) |
 | [`individual/week4_kanalid_aggregation.sql`](individual/week4_kanalid_aggregation.sql) | Roll D: kanalid aastate kaupa, kasvu jaotus ostude arvuks ja keskmiseks ostuks |
 | [`individual/week4_andmekvaliteet.md`](individual/week4_andmekvaliteet.md) | Andmekvaliteedi leiud: kaks kuupäevaformaati, topeltread, andmete katkemine, laožurnaal |
+| [`individual/week4_esitlus.pptx`](individual/week4_esitlus.pptx) | **Esitlus** — Kontekst → Rollid A–D → Suurim üllatus → Soovitus Kristile |
+| [`individual/week4_esitlus.pdf`](individual/week4_esitlus.pdf) | Esitlus (vaadatav brauseris) |
 
 ## Kuidas käivitada
 
@@ -70,6 +72,5 @@ Kasutasin Claude'i õpetajana: ta koostas ülesannete tekstid ja selgitas vigu (
 
 ## Edasi
 
-1. Esitlus (`week4_esitlus.pptx` / `.pdf`) — Kontekst → Tulemused → Suurim üllatus → Soovitus.
-2. Kampaaniate tabeli (`promotions`) seos müügiga.
-3. Nädal 5–6: visualiseerimine Power BI-s.
+1. Kampaaniate tabeli (`promotions`) seos müügiga.
+2. Nädal 5–6: visualiseerimine Power BI-s (sülearvutis, novembri lõpus).
